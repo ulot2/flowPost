@@ -1,0 +1,156 @@
+"use client";
+
+import { Sidebar } from "@/components/layout/Sidebar";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Suspense, useState } from "react";
+import { PostForm, PostFormData } from "@/components/create/PostForm";
+import { LivePreview } from "@/components/create/LivePreview";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { useMockApp } from "@/components/providers/MockAppProvider";
+
+function CreatePostContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { activeRole, createPosts } = useMockApp();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const canEdit = activeRole === "admin" || activeRole === "editor";
+
+  const prefillContent = searchParams.get("content") ?? "";
+
+  const [formData, setFormData] = useState<PostFormData>({
+    content: prefillContent,
+    imageUrls: [],
+    platforms: ["twitter"],
+    scheduledDate: new Date().toISOString().split("T")[0],
+    scheduledTime: "12:00",
+  });
+
+  // Redirect viewers away (after all hooks)
+  if (!canEdit && activeRole !== null) {
+    router.push("/");
+    return null;
+  }
+
+  const handleSubmit = async (status: "draft" | "scheduled") => {
+    setIsSubmitting(true);
+
+    try {
+      const scheduledDateTs = new Date(
+        `${formData.scheduledDate}T${formData.scheduledTime}`,
+      ).getTime();
+
+      if (status === "scheduled" && scheduledDateTs < Date.now()) {
+        toast.error("Cannot schedule posts in the past");
+        setIsSubmitting(false);
+        return;
+      }
+
+      createPosts({
+        content: formData.content,
+        platforms: formData.platforms,
+        imageUrls: formData.imageUrls,
+        status,
+        scheduledDate: status === "scheduled" ? scheduledDateTs : undefined,
+      });
+
+      toast.success(
+        status === "scheduled" ? "Post scheduled" : "Post added to draft",
+      );
+      router.push("/posts");
+    } catch (error) {
+      console.error("Failed to create post(s)", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row h-dvh overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#f7f4ef] flex flex-col">
+        <header className="flex flex-row justify-between items-center mb-6 bg-white border border-[#e0dbd3] p-4 shrink-0 rounded-xl gap-4">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#0f0f0f] font-syne">
+              Create Post
+            </h2>
+            <p className="text-sm text-[#6b6b6b] hidden sm:block">
+              Draft a new post and preview how it looks
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 shrink-0">
+            <Link href="/" passHref>
+              <Button
+                variant="outline"
+                className="shadow-sm border-[#e0dbd3] h-9 md:h-10 px-3 md:px-4 text-sm"
+              >
+                Cancel
+              </Button>
+            </Link>
+          </div>
+        </header>
+
+        {/* Stack on mobile, Side-by-side on desktop */}
+        <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0 overflow-y-auto lg:overflow-hidden">
+          {/* Top/Left Side: Form */}
+          <div className="w-full lg:w-[45%] flex flex-col lg:h-full shrink-0 lg:shrink bg-white rounded-2xl shadow-sm border border-[#e0dbd3] p-4 md:p-6 lg:overflow-y-auto custom-scrollbar relative">
+            {isSubmitting && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-xs z-10 flex items-center justify-center rounded-2xl">
+                <div className="w-8 h-8 border-4 border-[#0f0f0f] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            <PostForm
+              data={formData}
+              onChange={setFormData}
+              onSubmit={handleSubmit}
+            />
+          </div>
+
+          {/* Bottom/Right Side: Preview */}
+          <div className="w-full lg:w-[55%] flex flex-col lg:h-full shrink-0 lg:shrink bg-white/50 rounded-2xl shadow-inner border border-[#e0dbd3] p-4 md:p-6 lg:overflow-y-auto custom-scrollbar relative">
+            <h3 className="text-lg font-semibold text-[#0f0f0f] mb-4 shrink-0 px-2 flex items-center gap-2 font-syne">
+              <svg
+                className="w-5 h-5 text-[#6b6b6b]"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                />
+              </svg>
+              Live Preview
+            </h3>
+            <LivePreview data={formData} />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function CreatePostPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-[#f7f4ef]">
+          <div className="w-8 h-8 border-4 border-[#0f0f0f] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CreatePostContent />
+    </Suspense>
+  );
+}

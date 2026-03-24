@@ -1,0 +1,244 @@
+"use client";
+
+import Link from "next/link";
+import {
+  FileText,
+  Calendar,
+  LayoutDashboard,
+  Settings,
+  Lightbulb,
+  Menu,
+} from "lucide-react";
+import { usePathname } from "next/navigation";
+import { CustomUserButton } from "./CustomUserButton";
+import { NotificationBell } from "../notifications/NotificationBell";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useState } from "react";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "../ui/sheet";
+import { Button } from "../ui/button";
+import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
+import { useMockApp } from "@/components/providers/MockAppProvider";
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const [isOpen, setIsOpen] = useState(false);
+  const { activeConnectedAccounts: accounts } = useMockApp();
+
+  const navItems = [
+    {
+      name: "Calendar",
+      href: "/",
+      icon: Calendar,
+      isActive: pathname === "/",
+    },
+    {
+      name: "Posts",
+      href: "/posts",
+      icon: FileText,
+      isActive: pathname === "/posts" || pathname.startsWith("/edit/"),
+    },
+    {
+      name: "Dashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      isActive: pathname === "/dashboard",
+    },
+    {
+      name: "Ideas",
+      href: "/ideas",
+      icon: Lightbulb,
+      isActive: pathname === "/ideas",
+      // badge: ideasCount > 0 ? ideasCount : null,
+    },
+    {
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+      isActive: pathname === "/settings",
+    },
+    // Only admins can access settings
+    // ...(activeRole === "admin"
+    //   ? [
+    //       {
+    //         name: "Settings",
+    //         href: "/settings",
+    //         icon: Settings,
+    //         isActive: pathname === "/settings",
+    //       },
+    //     ]
+    //   : []),
+  ];
+
+  const sidebarContent = (
+    <>
+      {/* App Branding */}
+      <div className="px-5 mb-5 md:block hidden">
+        <div className="flex items-center gap-[10px]">
+          <div className="w-[30px] h-[30px] bg-[#d4f24a] rounded-[8px] flex items-center justify-center shrink-0">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#0f0f0f"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <span className="text-white text-[17px] font-extrabold tracking-[-0.02em] font-syne">
+            PostFlow
+          </span>
+        </div>
+      </div>
+
+      {/* Workspace Switcher */}
+      <div className="px-3 mb-6">
+        <WorkspaceSwitcher />
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-3 space-y-1">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const badge = "badge" in item ? item.badge : null;
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium transition-colors text-[14px] ${
+                item.isActive
+                  ? "bg-white/10 text-white"
+                  : "text-white/50 hover:bg-white/6 hover:text-white/80"
+              }`}
+            >
+              <Icon className="w-[18px] h-[18px]" />
+              {item.name}
+              {badge !== null && badge !== undefined && (
+                <span className="ml-auto px-2 py-0.5 rounded-full bg-[#d4f24a] text-[#0f0f0f] text-[10px] font-extrabold tabular-nums leading-none">
+                  {badge as number}
+                </span>
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Connected Accounts Indicator */}
+      {accounts.length > 0 && (
+        <div className="px-5 mb-4">
+          <Link
+            href="/settings?tab=accounts"
+            onClick={() => setIsOpen(false)}
+            className="group flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors"
+          >
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-white/50 uppercase tracking-wider mb-1.5">
+                Accounts
+              </span>
+              <div className="flex -space-x-2">
+                {accounts.map((account, i) => (
+                  <Avatar
+                    key={account._id}
+                    className={`w-6 h-6 border-2 border-[#0f0f0f] relative z-[${10 - i}]`}
+                  >
+                    {account.avatarUrl && (
+                      <AvatarImage src={account.avatarUrl} />
+                    )}
+                    <AvatarFallback className="bg-[#d4f24a] text-[#0f0f0f] text-[10px] font-bold">
+                      {account.handle.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+              </div>
+            </div>
+            <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-[#d4f24a] group-hover:text-[#0f0f0f] text-white/50 transition-colors">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* Notifications & User Section */}
+      <div className="px-4 mt-auto space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <NotificationBell />
+        </div>
+        <div className="w-full flex items-center gap-3 p-3 rounded-xl border border-white/8 bg-white/4">
+          <CustomUserButton />
+        </div>
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between bg-[#0f0f0f] p-4 shrink-0 shadow-sm z-50">
+        <div className="flex items-center gap-[10px]">
+          <div className="w-[28px] h-[28px] bg-[#d4f24a] rounded-[8px] flex items-center justify-center shrink-0">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#0f0f0f"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <span className="text-white text-[16px] font-extrabold tracking-[-0.02em] font-syne">
+            PostFlow
+          </span>
+        </div>
+
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10"
+            >
+              <Menu className="w-6 h-6" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="w-[280px] p-0 bg-[#0f0f0f] border-r-white/10 flex flex-col pt-12 pb-4"
+          >
+            <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+            {sidebarContent}
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex w-64 h-screen sticky top-0 bg-[#0f0f0f] flex-col pt-6 pb-4 shrink-0 border-r border-white/5">
+        {sidebarContent}
+      </aside>
+    </>
+  );
+}

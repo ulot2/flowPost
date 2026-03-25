@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Syne, Instrument_Sans } from "next/font/google";
 import { MockAppProvider } from "@/components/providers/MockAppProvider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,8 +43,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} ${instrumentSans.variable} antialiased`}
       >
         <MockAppProvider>
-          {children}
-          <Toaster />
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
         </MockAppProvider>
       </body>
     </html>

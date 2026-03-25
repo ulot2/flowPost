@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import SignUpLeftPanel from "@/components/auth/SignUpLeftPanel";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -31,10 +32,19 @@ export default function SignUpPage() {
     }
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 700));
-      setPendingVerification(true);
-    } catch {
-      setError("Failed to sign up.");
+      await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: fullName,
+          email: emailAddress,
+          password: password,
+        }),
+      });
+
+      toast.success("Account created! Please sign in.");
+      router.push("/sign-in");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sign up.");
     } finally {
       setIsLoading(false);
     }

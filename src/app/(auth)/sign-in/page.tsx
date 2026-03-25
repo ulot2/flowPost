@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import SignUpLeftPanel from "@/components/auth/SignUpLeftPanel";
 import { toast } from "sonner";
+import { apiRequest } from "@/lib/api";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -21,11 +22,28 @@ export default function SignInPage() {
     setError("");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 600));
-      toast.success("Signed in with mock session");
+      const data = await apiRequest<{
+        message: string;
+        user: {
+          id: string;
+          name: string;
+          email: string;
+        };
+        token: string;
+      }>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: emailAddress,
+          password: password,
+        }),
+      });
+
+      localStorage.setItem("postflow-token", data.token);
+
+      toast.success("Signed in successfully");
       router.push("/");
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sign in.");
     } finally {
       setIsLoading(false);
     }

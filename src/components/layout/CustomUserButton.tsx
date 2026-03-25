@@ -10,11 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMockApp } from "@/components/providers/MockAppProvider";
+import { useAuth } from "@/components/providers/AuthProvider";
 import { toast } from "sonner";
 
 export function CustomUserButton() {
-  const { user } = useMockApp();
+  const { user, logout } = useAuth();
 
   if (!user) return null;
 
@@ -23,14 +23,14 @@ export function CustomUserButton() {
       <DropdownMenuTrigger asChild>
         <button className="flex w-full items-center gap-3 outline-none hover:bg-white/6 p-1 -m-1 rounded-lg transition-colors cursor-pointer">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.imageUrl} alt={user.fullName || ""} />
+            <AvatarImage src={""} alt={user.name || ""} />
             <AvatarFallback className="bg-[#d4f24a] text-[#0f0f0f] text-xs font-bold">
-              {user.firstName?.charAt(0) || "U"}
+              {user.name?.charAt(0) || "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-col items-start truncate text-sm">
             <span className="font-medium text-white truncate w-full">
-              {user.fullName || "User"}
+              {user.name || "User"}
             </span>
             <span className="text-[11px] text-white/40 truncate w-full flex text-left">
               {user.email}
@@ -41,7 +41,7 @@ export function CustomUserButton() {
       <DropdownMenuContent className="w-56" align="center" forceMount>
         <DropdownMenuLabel className="font-normal relative">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.fullName}</p>
+            <p className="text-sm font-medium leading-none">{user.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
@@ -49,16 +49,14 @@ export function CustomUserButton() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => toast.info("Profile controls are mocked for UI mode.")}
-        >
-          <UserIcon className="mr-2 h-4 w-4" />
-          <span>Manage account</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
           onClick={() =>
             toast.info("Authentication is disabled in UI-only mode.")
           }
         >
+          <UserIcon className="mr-2 h-4 w-4" />
+          <span>Manage account</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={logout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign out</span>
         </DropdownMenuItem>
